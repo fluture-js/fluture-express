@@ -1,0 +1,40 @@
+{
+  "name": "fluture-express",
+  "version": "0.0.0",
+  "description": "Create Express middleware using Futures",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/fluture-js/fluture-express.git"
+  },
+  "engines": {
+    "nodejs": ">=6.0.0"
+  },
+  "files": [
+    "/index.js",
+    "/LICENSE",
+    "/package.json",
+    "/README.md"
+  ],
+  "scripts": {
+    "doctest": "sanctuary-doctest",
+    "lint": "sanctuary-lint",
+    "release": "sanctuary-release",
+    "test": "npm run lint && sanctuary-test && npm run doctest"
+  },
+  "author": "Aldwin Vlasblom <aldwin.vlasblom@gmail.com> (https://github.com/Avaq)",
+  "license": "MIT",
+  "dependencies": {
+    "daggy": "^1.2.0"
+  },
+  "peerDependencies": {
+    "fluture": ">=6.0.0 <9.0.0"
+  },
+  "devDependencies": {
+    "codecov": "^3.0.0",
+    "express": "^4.16.2",
+    "fluture": "^8.0.1",
+    "sanctuary-scripts": "^1.0.1",
+    "sinon": "^4.1.6"
+  }
+}
