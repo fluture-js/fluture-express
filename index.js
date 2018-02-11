@@ -1,5 +1,11 @@
 //. # Fluture Express
 //.
+//. [![NPM Version](https://badge.fury.io/js/fluture-express.svg)](https://www.npmjs.com/package/fluture-express)
+//. [![Dependencies](https://david-dm.org/fluture-js/fluture-express.svg)](https://david-dm.org/fluture-js/fluture-express)
+//. [![Build Status](https://travis-ci.org/fluture-js/fluture-express.svg?branch=master)](https://travis-ci.org/fluture-js/fluture-express)
+//. [![Code Coverage](https://codecov.io/gh/fluture-js/fluture-express/branch/master/graph/badge.svg)](https://codecov.io/gh/fluture-js/fluture-express)
+//. [![Greenkeeper badge](https://badges.greenkeeper.io/fluture-js/fluture-express.svg)](https://greenkeeper.io/)
+//.
 //. Create Express middleware using Futures from [Fluture][].
 
 'use strict';
@@ -115,6 +121,8 @@ const runAction = (name, action, req, res, next) => {
   });
 };
 
+//. ### Middleware creation utilities
+//.
 //# middleware :: ((Req, a) -> Future b (Response a)) -> (Req, Res a, (b -> Undefined)) -> Undefined
 //.
 //. Converts an action to an Express middleware.
@@ -129,8 +137,6 @@ const middleware = action => function dispatcher(req, res, next) {
   runAction(action.name || 'anonymous', action, req, res, next);
 };
 
-//. ### Middleware creation utilities
-//.
 //# dispatcher :: String -> String -> (Req, Res a, (Any -> Undefined)) -> Undefined
 //.
 //. Creates middleware that uses the export from the given file in the given
