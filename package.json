@@ -1,6 +1,6 @@
 {
   "name": "fluture-express",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Create Express middleware using Futures",
   "main": "index.js",
   "repository": {
