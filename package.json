@@ -35,6 +35,6 @@
     "express": "^4.16.2",
     "fluture": "^8.0.1",
     "sanctuary-scripts": "^1.0.1",
-    "sinon": "^4.1.6"
+    "sinon": "^5.0.0"
   }
 }
