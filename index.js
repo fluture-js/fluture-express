@@ -67,7 +67,7 @@ const path = require('path');
 //.
 //. Fluture-Express mutates the response object for you, based on a
 //. specification of what the response should be. This specification is
-//. captured by the Response sum-type. It has three constructors.
+//. captured by the Response sum-type. It has these constructors:
 //.
 //# Stream :: (Number, String, NodeReadableStream) -> Response a
 //.
@@ -80,6 +80,11 @@ const path = require('path');
 //. Indicates a JSON response. The first argument will be the response status
 //. code, and the second will be converted to JSON and sent as-is.
 //.
+//# Redirect :: (Number, String) -> Response a
+//.
+//. Indicates a redirection. The first argument will be the response status
+//. code, and the second will be the value of the Location header.
+//.
 //# Next :: a -> Response a
 //.
 //. Indicates that this middleware does not form a response. The supplied value
@@ -87,6 +92,7 @@ const path = require('path');
 const Response = daggy.taggedSum('Response', {
   Stream: ['code', 'mime', 'stream'],
   Json: ['code', 'value'],
+  Redirect: ['code', 'url'],
   Next: ['locals'],
 });
 
@@ -112,6 +118,9 @@ const runAction = (name, action, req, res, next) => {
       },
       Json: (code, json) => {
         res.status(code).json(json);
+      },
+      Redirect: (code, url) => {
+        res.redirect(code, url);
       },
       Next: locals => {
         res.locals = locals;
@@ -160,6 +169,7 @@ module.exports = {
   Response,
   Stream: Response.Stream,
   Json: Response.Json,
+  Redirect: Response.Redirect,
   Next: Response.Next,
 };
 
