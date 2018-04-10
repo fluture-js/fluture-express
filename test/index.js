@@ -5,7 +5,7 @@ const Future = require('fluture');
 const Z = require('sanctuary-type-classes');
 const sinon = require('sinon');
 
-const {Stream, Json, Redirect, Next, middleware, dispatcher} = require('..');
+const {Stream, Json, Redirect, Empty, Next, middleware, dispatcher} = require('..');
 
 
 function eq(actual, expected) {
@@ -40,6 +40,11 @@ test('Redirect', () => {
   eq(typeof Redirect, 'function');
   eq(Redirect.length, 2);
   eq(Redirect.is(Redirect(200, 'example.com')), true);
+});
+
+test('Empty', () => {
+  eq(typeof Empty, 'object');
+  eq(Empty.is(Empty), true);
 });
 
 test('Next', () => {
@@ -86,6 +91,18 @@ test('Next middleware', () => {
   eq(mockRes.status.args, []);
   eq(mockRes.json.args, []);
   eq(mockNext.args, [[]]);
+});
+
+test('Empty middleware', () => {
+  const mock = middleware(_ => Future.of(Empty));
+  const mockRes = {status: methodSpy(), end: methodSpy()};
+  const mockNext = sinon.spy();
+
+  mock({}, mockRes, mockNext);
+
+  eq(mockRes.status.args, [[204]]);
+  eq(mockRes.end.args, [[]]);
+  eq(mockNext.args, []);
 });
 
 test('Redirect middleware', () => {
