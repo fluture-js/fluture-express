@@ -85,6 +85,11 @@ const path = require('path');
 //. Indicates a redirection. The first argument will be the response status
 //. code, and the second will be the value of the Location header.
 //.
+//# Empty :: Response a
+//.
+//. Indicates an empty response. The response status will be set to 204, and
+//. no response body or Content-Type header will be sent.
+//.
 //# Next :: a -> Response a
 //.
 //. Indicates that this middleware does not form a response. The supplied value
@@ -93,6 +98,7 @@ const Response = daggy.taggedSum('Response', {
   Stream: ['code', 'mime', 'stream'],
   Json: ['code', 'value'],
   Redirect: ['code', 'url'],
+  Empty: [],
   Next: ['locals'],
 });
 
@@ -121,6 +127,9 @@ const runAction = (name, action, req, res, next) => {
       },
       Redirect: (code, url) => {
         res.redirect(code, url);
+      },
+      Empty: () => {
+        res.status(204).end();
       },
       Next: locals => {
         res.locals = locals;
@@ -170,6 +179,7 @@ module.exports = {
   Stream: Response.Stream,
   Json: Response.Json,
   Redirect: Response.Redirect,
+  Empty: Response.Empty,
   Next: Response.Next,
 };
 
