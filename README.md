@@ -61,27 +61,32 @@ The Express Response object with a `locals` property of type `a`.
 
 Fluture-Express mutates the response object for you, based on a
 specification of what the response should be. This specification is
-captured by the Response sum-type. It has three constructors.
+captured by the Response sum-type. It has these constructors:
 
-<h4 name="Stream"><code><a href="https://github.com/fluture-js/fluture-express/blob/v1.0.1/index.js#L72">Stream :: (Number, String, NodeReadableStream) -⁠> Response a</a></code></h4>
+#### <a name="Stream" href="https://github.com/fluture-js/fluture-express/blob/v2.0.0/index.js#L72">`Stream :: (Number, String, NodeReadableStream) -⁠> Response a`</a>
 
 Indicates a streamed response. The first argument will be the response
 status code, the second will be used as a mime type, and the third will be
 piped into the response to form the response data.
 
-<h4 name="Json"><code><a href="https://github.com/fluture-js/fluture-express/blob/v1.0.1/index.js#L78">Json :: (Number, Object) -⁠> Response a</a></code></h4>
+#### <a name="Json" href="https://github.com/fluture-js/fluture-express/blob/v2.0.0/index.js#L78">`Json :: (Number, Object) -⁠> Response a`</a>
 
 Indicates a JSON response. The first argument will be the response status
 code, and the second will be converted to JSON and sent as-is.
 
-<h4 name="Next"><code><a href="https://github.com/fluture-js/fluture-express/blob/v1.0.1/index.js#L83">Next :: a -⁠> Response a</a></code></h4>
+#### <a name="Redirect" href="https://github.com/fluture-js/fluture-express/blob/v2.0.0/index.js#L83">`Redirect :: (Number, String) -⁠> Response a`</a>
+
+Indicates a redirection. The first argument will be the response status
+code, and the second will be the value of the Location header.
+
+#### <a name="Next" href="https://github.com/fluture-js/fluture-express/blob/v2.0.0/index.js#L88">`Next :: a -⁠> Response a`</a>
 
 Indicates that this middleware does not form a response. The supplied value
 will be assigned to `res.locals` and the next middleware will be called.
 
 ### Middleware creation utilities
 
-<h4 name="middleware"><code><a href="https://github.com/fluture-js/fluture-express/blob/v1.0.1/index.js#L126">middleware :: ((Req, a) -⁠> Future b (Response a)) -⁠> (Req, Res a, (b -⁠> Undefined)) -⁠> Undefined</a></code></h4>
+#### <a name="middleware" href="https://github.com/fluture-js/fluture-express/blob/v2.0.0/index.js#L135">`middleware :: ((Req, a) -⁠> Future b (Response a)) -⁠> (Req, Res a, (b -⁠> Undefined)) -⁠> Undefined`</a>
 
 Converts an action to an Express middleware.
 
@@ -92,7 +97,7 @@ appropriate mutations to the [`res`][].
 If the Future rejects, the rejection reason is passed into `next` for
 further [error handling with Express][].
 
-<h4 name="dispatcher"><code><a href="https://github.com/fluture-js/fluture-express/blob/v1.0.1/index.js#L140">dispatcher :: String -⁠> String -⁠> (Req, Res a, (Any -⁠> Undefined)) -⁠> Undefined</a></code></h4>
+#### <a name="dispatcher" href="https://github.com/fluture-js/fluture-express/blob/v2.0.0/index.js#L149">`dispatcher :: String -⁠> String -⁠> (Req, Res a, (Any -⁠> Undefined)) -⁠> Undefined`</a>
 
 Creates middleware that uses the export from the given file in the given
 directory as an "action".
