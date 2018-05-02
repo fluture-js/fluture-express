@@ -27,7 +27,7 @@ const path = require('path');
 //. middleware, and they can be used interchangably.
 //.
 //. ```js
-//. //index.js
+//. // index.js
 //.
 //. const {dispatcher} = require('fluture-express');
 //. const app = require('express')();
@@ -38,12 +38,12 @@ const path = require('path');
 //. ```
 //.
 //. ```js
-//. //actions/welcome.js
+//. // actions/welcome.js
 //.
 //. const {Json} = require('fluture-express');
 //. const Future = require('fluture');
 //.
-//. module.exports = (req, locals) => Future.do(function*(){
+//. module.exports = (req, locals) => Future.do(function* () {
 //.   const user = yield locals.database.find('sessions', locals.session.id);
 //.   return Json(200, {welcome: user.name});
 //. });
