@@ -8,7 +8,7 @@
     "url": "git://github.com/fluture-js/fluture-express.git"
   },
   "engines": {
-    "nodejs": ">=6.0.0"
+    "nodejs": ">=8.0.0"
   },
   "files": [
     "/index.js",
