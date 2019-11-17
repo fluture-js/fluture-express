@@ -1,7 +1,7 @@
 'use strict';
 
 const assert = require ('assert');
-const Future = require ('fluture');
+const {resolve} = require ('fluture');
 const Z = require ('sanctuary-type-classes');
 const sinon = require ('sinon');
 
@@ -58,9 +58,9 @@ test ('middleware', () => {
   eq (middleware.length, 1);
 
   /* eslint-disable prefer-arrow-callback */
-  const mock = middleware (function mock() { return Future.of (Json (200, {})); });
+  const mock = middleware (function mock() { return resolve (Json (200, {})); });
   const mockNoFuture = middleware (function mock() { return null; });
-  const mockNoResponse = middleware (function mock() { return Future.of (null); });
+  const mockNoResponse = middleware (function mock() { return resolve (null); });
   /* eslint-enable prefer-arrow-callback */
 
   eq (typeof mock, typeof mockNoFuture);
@@ -82,7 +82,7 @@ test ('middleware', () => {
 });
 
 test ('Next middleware', () => {
-  const mock = middleware (_ => Future.of (Next ({foo: 'bar'})));
+  const mock = middleware (_ => resolve (Next ({foo: 'bar'})));
   const mockRes = {status: sinon.spy (), json: sinon.spy ()};
   const mockNext = sinon.spy ();
 
@@ -94,7 +94,7 @@ test ('Next middleware', () => {
 });
 
 test ('Empty middleware', () => {
-  const mock = middleware (_ => Future.of (Empty));
+  const mock = middleware (_ => resolve (Empty));
   const mockRes = {status: methodSpy (), end: methodSpy ()};
   const mockNext = sinon.spy ();
 
@@ -106,7 +106,7 @@ test ('Empty middleware', () => {
 });
 
 test ('Redirect middleware', () => {
-  const mock = middleware (_ => Future.of (Redirect (200, 'example.com')));
+  const mock = middleware (_ => resolve (Redirect (200, 'example.com')));
   const mockRes = {redirect: sinon.spy ()};
   const mockNext = sinon.spy ();
 
@@ -117,7 +117,7 @@ test ('Redirect middleware', () => {
 });
 
 test ('Json middleware', () => {
-  const mock = middleware (_ => Future.of (Json (200, {foo: 'bar'})));
+  const mock = middleware (_ => resolve (Json (200, {foo: 'bar'})));
   const mockRes = {status: methodSpy (), json: methodSpy ()};
   const mockNext = sinon.spy ();
 
@@ -130,7 +130,7 @@ test ('Json middleware', () => {
 
 test ('Stream middleware', () => {
   const mockStream = {pipe: sinon.spy ()};
-  const mock = middleware (_ => Future.of (Stream (201, 'jpeg', mockStream)));
+  const mock = middleware (_ => resolve (Stream (201, 'jpeg', mockStream)));
   const mockRes = {status: methodSpy (), type: methodSpy ()};
   const mockNext = sinon.spy ();
 

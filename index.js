@@ -11,7 +11,7 @@
 'use strict';
 
 const daggy = require ('daggy');
-const Future = require ('fluture');
+const {fork, isFuture} = require ('fluture');
 const path = require ('path');
 
 //. ## Usage
@@ -105,13 +105,13 @@ const Response = daggy.taggedSum ('Response', {
 const runAction = (name, action, req, res, next) => {
   const ret = action (req, res.locals);
 
-  if (!Future.isFuture (ret)) {
+  if (!isFuture (ret)) {
     throw new TypeError (
       `The "${name}" action did not return a Future, instead saw:\n\n  ${ret}`
     );
   }
 
-  ret.fork (next, val => {
+  fork (next) (val => {
     if (!Response.is (val)) {
       throw new TypeError (`The Future returned by the "${
         name
@@ -140,7 +140,7 @@ const runAction = (name, action, req, res, next) => {
         next ();
       },
     });
-  });
+  }) (ret);
 };
 
 //. ### Middleware creation utilities

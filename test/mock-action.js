@@ -1,6 +1,6 @@
 'use strict';
 
-const Future = require ('fluture');
+const {resolve} = require ('fluture');
 const {Json} = require ('..');
 
-module.exports = _ => Future.of (Json (200, {foo: 'bar'}));
+module.exports = _ => resolve (Json (200, {foo: 'bar'}));
