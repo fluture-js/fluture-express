@@ -92,6 +92,10 @@ const runAction = (name, action, req, res, next) => {
         res.status (code);
         res.json (json);
       },
+      Render: (code, view, data) => {
+        res.status (code);
+        res.render (view, data);
+      },
       Redirect: (code, url) => {
         res.redirect (code, url);
       },
@@ -141,6 +145,17 @@ export const Stream = code => mime => stream => (
 export const Json = code => value => (
   Response.Json (code, value)
 );
+
+//# Render :: Number -> String -> Object -> Response a
+//.
+//. Indicates a response to be rendered using a template. The first argument
+//. will be the response status code, the second is the path to the template
+//. file, and the third is the data to inject into the template. This uses
+//. Express' render method under the hood, so you can configure it globally
+//. with app.set ('view engine', engine) and app.set ('views', path).
+export const Render = code => view => data => (
+  Response.Render(code, view, data)
+)
 
 //# Redirect :: Number -> String -> Response a
 //.
