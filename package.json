@@ -1,8 +1,11 @@
 {
   "name": "fluture-express",
   "version": "3.1.0",
+  "type": "module",
   "description": "Create Express middleware using Futures",
-  "main": "index.js",
+  "module": "index.js",
+  "main": "index.cjs",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git://github.com/fluture-js/fluture-express.git"
@@ -10,20 +13,27 @@
   "engines": {
     "nodejs": ">=8.0.0"
   },
-  "files": [
-    "/index.js",
-    "/LICENSE",
-    "/package.json",
-    "/README.md"
+  "tags": [
+    "fluture",
+    "express",
+    "middleware",
+    "functional-programming"
   ],
   "scripts": {
+    "build": "rollup -c rollup.config.js",
+    "codecov": "codecov",
     "doctest": "sanctuary-doctest",
     "lint": "sanctuary-lint",
     "release": "sanctuary-release",
     "test": "npm run lint && sanctuary-test && npm run doctest"
   },
-  "author": "Aldwin Vlasblom <aldwin.vlasblom@gmail.com> (https://github.com/Avaq)",
-  "license": "MIT",
+  "files": [
+    "/index.cjs",
+    "/index.js",
+    "/LICENSE",
+    "/package.json",
+    "/README.md"
+  ],
   "dependencies": {
     "daggy": "^1.2.0"
   },
@@ -31,9 +41,13 @@
     "fluture": ">=12.0.0 <13.0.0"
   },
   "devDependencies": {
-    "codecov": "^3.0.0",
+    "babel-eslint": "^10.1.0",
+    "c8": "^7.1.0",
+    "codecov": "^3.2.0",
     "express": "^4.16.2",
     "fluture": "^12.0.0",
+    "oletus": "^3.0.0",
+    "rollup": "^2.0.0",
     "sanctuary-scripts": "^4.0.0",
     "sinon": "^9.0.0"
   }

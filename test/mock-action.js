@@ -1,6 +1,4 @@
-'use strict';
+import {resolve} from 'fluture/index.js';
+import {Json} from '../index.js';
 
-const {resolve} = require ('fluture');
-const {Json} = require ('..');
-
-module.exports = _ => resolve (Json (200, {foo: 'bar'}));
+export default _ => resolve (Json (200) ({foo: 'bar'}));

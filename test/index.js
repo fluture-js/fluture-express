@@ -1,11 +1,10 @@
-'use strict';
+import assert from 'assert';
+import {resolve} from 'fluture/index.js';
+import Z from 'sanctuary-type-classes';
+import sinon from 'sinon';
+import test from 'oletus';
 
-const assert = require ('assert');
-const {resolve} = require ('fluture');
-const Z = require ('sanctuary-type-classes');
-const sinon = require ('sinon');
-
-const {Stream, Json, Redirect, Empty, Next, middleware, dispatcher} = require ('..');
+import {Response, Stream, Json, Redirect, Empty, Next, middleware, dispatcher} from '../index.js';
 
 
 function eq(actual, expected) {
@@ -25,40 +24,28 @@ function throws(fn, expected) {
 }
 
 test ('Stream', () => {
-  eq (typeof Stream, 'function');
-  eq (Stream.length, 3);
-  eq (Stream.is (Stream (200, 'jpeg', {})), true);
+  eq (Response.Stream.is (Stream (200) ('jpeg') ({})), true);
 });
 
 test ('Json', () => {
-  eq (typeof Json, 'function');
-  eq (Json.length, 2);
-  eq (Json.is (Json (200, {})), true);
+  eq (Response.Json.is (Json (200) ({})), true);
 });
 
 test ('Redirect', () => {
-  eq (typeof Redirect, 'function');
-  eq (Redirect.length, 2);
-  eq (Redirect.is (Redirect (200, 'example.com')), true);
+  eq (Response.Redirect.is (Redirect (200) ('example.com')), true);
 });
 
 test ('Empty', () => {
-  eq (typeof Empty, 'object');
-  eq (Empty.is (Empty), true);
+  eq (Response.Empty.is (Empty), true);
 });
 
 test ('Next', () => {
-  eq (typeof Next, 'function');
-  eq (Next.length, 1);
-  eq (Next.is (Next ({})), true);
+  eq (Response.Next.is (Next ({})), true);
 });
 
 test ('middleware', () => {
-  eq (typeof middleware, 'function');
-  eq (middleware.length, 1);
-
   /* eslint-disable prefer-arrow-callback */
-  const mock = middleware (function mock() { return resolve (Json (200, {})); });
+  const mock = middleware (function mock() { return resolve (Json (200) ({})); });
   const mockNoFuture = middleware (function mock() { return null; });
   const mockNoResponse = middleware (function mock() { return resolve (null); });
   /* eslint-enable prefer-arrow-callback */
@@ -106,7 +93,7 @@ test ('Empty middleware', () => {
 });
 
 test ('Redirect middleware', () => {
-  const mock = middleware (_ => resolve (Redirect (200, 'example.com')));
+  const mock = middleware (_ => resolve (Redirect (200) ('example.com')));
   const mockRes = {redirect: sinon.spy ()};
   const mockNext = sinon.spy ();
 
@@ -117,7 +104,7 @@ test ('Redirect middleware', () => {
 });
 
 test ('Json middleware', () => {
-  const mock = middleware (_ => resolve (Json (200, {foo: 'bar'})));
+  const mock = middleware (_ => resolve (Json (200) ({foo: 'bar'})));
   const mockRes = {status: methodSpy (), json: methodSpy ()};
   const mockNext = sinon.spy ();
 
@@ -130,7 +117,7 @@ test ('Json middleware', () => {
 
 test ('Stream middleware', () => {
   const mockStream = {pipe: sinon.spy ()};
-  const mock = middleware (_ => resolve (Stream (201, 'jpeg', mockStream)));
+  const mock = middleware (_ => resolve (Stream (201) ('jpeg') (mockStream)));
   const mockRes = {status: methodSpy (), type: methodSpy ()};
   const mockNext = sinon.spy ();
 
@@ -142,17 +129,12 @@ test ('Stream middleware', () => {
   eq (mockNext.args, []);
 });
 
-test ('dispatcher', () => {
-  eq (typeof dispatcher, 'function');
-  eq (dispatcher.length, 1);
-  eq (typeof dispatcher (''), 'function');
-  eq (dispatcher ('').length, 1);
-
-  const mock = dispatcher (__dirname) ('mock-action');
+test ('dispatcher', async () => {
+  const mock = dispatcher ('test') ('mock-action.js');
   const mockRes = {status: methodSpy (), json: methodSpy ()};
   const mockNext = sinon.spy ();
 
-  mock ({}, mockRes, mockNext);
+  await mock ({}, mockRes, mockNext);
 
   eq (mockRes.status.args, [[200]]);
   eq (mockRes.json.args, [[{foo: 'bar'}]]);

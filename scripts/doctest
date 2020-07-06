@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+echo 'Skipping doctests: Dynmaic imports not supported :('
