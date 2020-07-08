@@ -153,7 +153,7 @@ export const Json = code => value => (
 //. will be the response status code, the second is the path to the template
 //. file, and the third is the data to inject into the template. This uses
 //. Express' render method under the hood, so you can configure it globally
-//. with app.set ('view engine', engine) and app.set ('views', path).
+//. with `app.set ('view engine', engine)` and `app.set ('views', path)`.
 export const Render = code => view => data => (
   Response.Render (code, view, data)
 );
