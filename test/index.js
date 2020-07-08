@@ -4,7 +4,7 @@ import Z from 'sanctuary-type-classes';
 import sinon from 'sinon';
 import test from 'oletus';
 
-import {Response, Stream, Json, Redirect, Empty, Next, middleware, dispatcher} from '../index.js';
+import {Response, Stream, Json, Render, Redirect, Empty, Next, middleware, dispatcher} from '../index.js';
 
 
 function eq(actual, expected) {
@@ -29,6 +29,10 @@ test ('Stream', () => {
 
 test ('Json', () => {
   eq (Response.Json.is (Json (200) ({})), true);
+});
+
+test ('Render', () => {
+  eq (Response.Render.is (Render (200) ('index') ({})), true);
 });
 
 test ('Redirect', () => {
@@ -113,6 +117,16 @@ test ('Json middleware', () => {
   eq (mockRes.status.args, [[200]]);
   eq (mockRes.json.args, [[{foo: 'bar'}]]);
   eq (mockNext.args, []);
+});
+
+test ('Render middleware', () => {
+  const mock = middleware (_ => resolve (Render (200) ('index') ({user: 'hello'})));
+  const mockRes = {status: methodSpy (), render: methodSpy ()};
+  const mockNext = sinon.spy ();
+
+  mock ({}, mockRes, mockNext);
+
+  eq (mockRes.status.args, [[200]]);
 });
 
 test ('Stream middleware', () => {

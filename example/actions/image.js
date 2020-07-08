@@ -1,5 +1,3 @@
-'use strict';
-
 const {Stream} = require ('../..');
 const Future = require ('fluture');
 const fs = require ('fs');

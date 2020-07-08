@@ -124,6 +124,7 @@ const runAction = (name, action, req, res, next) => {
 export const Response = daggy.taggedSum ('Response', {
   Stream: ['code', 'mime', 'stream'],
   Json: ['code', 'value'],
+  Render: ['code', 'view', 'data'],
   Redirect: ['code', 'url'],
   Empty: [],
   Next: ['locals'],
@@ -154,8 +155,8 @@ export const Json = code => value => (
 //. Express' render method under the hood, so you can configure it globally
 //. with app.set ('view engine', engine) and app.set ('views', path).
 export const Render = code => view => data => (
-  Response.Render(code, view, data)
-)
+  Response.Render (code, view, data)
+);
 
 //# Redirect :: Number -> String -> Response a
 //.

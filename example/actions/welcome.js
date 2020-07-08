@@ -1,8 +1,10 @@
-'use strict';
-
 const {Render} = require ('../..');
 const Future = require ('fluture');
 
-module.exports = (req, locals) => Future.resolve (Json (200) ({
-  welcome: locals.session.id ? `user ${locals.session.id}` : 'stranger',
-}));
+module.exports = (req, locals) =>
+  Future.resolve (
+    Render (200)
+           ('index')
+           ({user: locals.session.id
+                        ? `user ${locals.session.id}`
+                        : 'stranger'}));
