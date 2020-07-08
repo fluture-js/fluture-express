@@ -127,6 +127,7 @@ test ('Render middleware', () => {
   mock ({}, mockRes, mockNext);
 
   eq (mockRes.status.args, [[200]]);
+  eq (mockRes.render.args, [['index', {user: 'hello'}]]);
 });
 
 test ('Stream middleware', () => {
