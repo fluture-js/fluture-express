@@ -24,7 +24,7 @@ module.exports = req => Future.go (function* () {
     (_ => new Error ('No read access to the requested file'))
     (access (file) (fs.constants.R_OK));
 
-  return Stream (200,
-                 path.extname (req.query.file),
-                 fs.createReadStream (file));
+  return Stream (200)
+                (path.extname (req.query.file))
+                (fs.createReadStream (file));
 });
