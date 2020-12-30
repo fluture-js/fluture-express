@@ -2,9 +2,7 @@
 
 [![NPM Version](https://badge.fury.io/js/fluture-express.svg)](https://www.npmjs.com/package/fluture-express)
 [![Dependencies](https://david-dm.org/fluture-js/fluture-express.svg)](https://david-dm.org/fluture-js/fluture-express)
-[![Build Status](https://travis-ci.org/fluture-js/fluture-express.svg?branch=master)](https://travis-ci.org/fluture-js/fluture-express)
 [![Code Coverage](https://codecov.io/gh/fluture-js/fluture-express/branch/master/graph/badge.svg)](https://codecov.io/gh/fluture-js/fluture-express)
-[![Greenkeeper badge](https://badges.greenkeeper.io/fluture-js/fluture-express.svg)](https://greenkeeper.io/)
 
 Create Express middleware using Futures from [Fluture][].
 
@@ -61,37 +59,50 @@ The Express Response object with a `locals` property of type `a`.
 
 Fluture-Express mutates the response object for you, based on a
 specification of what the response should be. This specification is
-captured by the Response sum-type. It has these constructors:
+captured by the Response sum-type.
 
-#### <a name="Stream" href="https://github.com/fluture-js/fluture-express/blob/v3.1.0/index.js#L72">`Stream :: (Number, String, NodeReadableStream) -⁠> Response a`</a>
+#### <a name="Response" href="https://github.com/fluture-js/fluture-express/blob/v4.0.0/index.js#L120">`Response :: Type`</a>
+
+The [daggy][] type representative of the Response type. You'll want to
+use one of its constructors listed below most of the time.
+
+#### <a name="Stream" href="https://github.com/fluture-js/fluture-express/blob/v4.0.0/index.js#L133">`Stream :: Number -⁠> String -⁠> NodeReadableStream -⁠> Response a`</a>
 
 Indicates a streamed response. The first argument will be the response
 status code, the second will be used as a mime type, and the third will be
 piped into the response to form the response data.
 
-#### <a name="Json" href="https://github.com/fluture-js/fluture-express/blob/v3.1.0/index.js#L78">`Json :: (Number, Object) -⁠> Response a`</a>
+#### <a name="Json" href="https://github.com/fluture-js/fluture-express/blob/v4.0.0/index.js#L142">`Json :: Number -⁠> Object -⁠> Response a`</a>
 
 Indicates a JSON response. The first argument will be the response status
 code, and the second will be converted to JSON and sent as-is.
 
-#### <a name="Redirect" href="https://github.com/fluture-js/fluture-express/blob/v3.1.0/index.js#L83">`Redirect :: (Number, String) -⁠> Response a`</a>
+#### <a name="Render" href="https://github.com/fluture-js/fluture-express/blob/v4.0.0/index.js#L150">`Render :: Number -⁠> String -⁠> Object -⁠> Response a`</a>
+
+Indicates a response to be rendered using a template. The first argument
+will be the response status code, the second is the path to the template
+file, and the third is the data to inject into the template. This uses
+Express' render method under the hood, so you can configure it globally
+with `app.set ('view engine', engine)` and `app.set ('views', path)`.
+
+#### <a name="Redirect" href="https://github.com/fluture-js/fluture-express/blob/v4.0.0/index.js#L161">`Redirect :: Number -⁠> String -⁠> Response a`</a>
 
 Indicates a redirection. The first argument will be the response status
 code, and the second will be the value of the Location header.
 
-#### <a name="Empty" href="https://github.com/fluture-js/fluture-express/blob/v3.1.0/index.js#L88">`Empty :: Response a`</a>
+#### <a name="Empty" href="https://github.com/fluture-js/fluture-express/blob/v4.0.0/index.js#L169">`Empty :: Response a`</a>
 
 Indicates an empty response. The response status will be set to 204, and
 no response body or Content-Type header will be sent.
 
-#### <a name="Next" href="https://github.com/fluture-js/fluture-express/blob/v3.1.0/index.js#L93">`Next :: a -⁠> Response a`</a>
+#### <a name="Next" href="https://github.com/fluture-js/fluture-express/blob/v4.0.0/index.js#L175">`Next :: a -⁠> Response a`</a>
 
 Indicates that this middleware does not form a response. The supplied value
 will be assigned to `res.locals` and the next middleware will be called.
 
 ### Middleware creation utilities
 
-#### <a name="middleware" href="https://github.com/fluture-js/fluture-express/blob/v3.1.0/index.js#L148">`middleware :: ((Req, a) -⁠> Future b (Response a)) -⁠> (Req, Res a, (b -⁠> Undefined)) -⁠> Undefined`</a>
+#### <a name="middleware" href="https://github.com/fluture-js/fluture-express/blob/v4.0.0/index.js#L183">`middleware :: ((Req, a) -⁠> Future b (Response a)) -⁠> (Req, Res a, (b -⁠> Undefined)) -⁠> Undefined`</a>
 
 Converts an action to an Express middleware.
 
@@ -102,7 +113,7 @@ appropriate mutations to the [`res`][].
 If the Future rejects, the rejection reason is passed into `next` for
 further [error handling with Express][].
 
-#### <a name="dispatcher" href="https://github.com/fluture-js/fluture-express/blob/v3.1.0/index.js#L162">`dispatcher :: String -⁠> String -⁠> (Req, Res a, (Any -⁠> Undefined)) -⁠> Undefined`</a>
+#### <a name="dispatcher" href="https://github.com/fluture-js/fluture-express/blob/v4.0.0/index.js#L197">`dispatcher :: String -⁠> String -⁠> (Req, Res a, (Any -⁠> Undefined)) -⁠> Promise Undefined`</a>
 
 Creates middleware that uses the export from the given file in the given
 directory as an "action".
@@ -119,3 +130,4 @@ The exported value should be a function of the same signature as given to
 [`middleware`]: #middleware
 [`res`]: #res-a
 [error handling with Express]: https://expressjs.com/en/guide/error-handling.html
+[daggy]: https://github.com/fantasyland/daggy
