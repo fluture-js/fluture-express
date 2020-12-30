@@ -1,8 +1,8 @@
-'use strict';
-
 const {Next} = require ('../..');
 const Future = require ('fluture');
 
-module.exports = (req, locals) => Future.resolve (Next (Object.assign ({
-  session: {id: req.headers['x-authenticated-user']},
-}, locals)));
+module.exports = (req, locals) => {
+  const session = {id: req.headers['x-authenticated-user']};
+  const newLocals = Object.assign ({session}, locals);
+  return Future.resolve (Next (newLocals));
+};
