@@ -1,3 +1,5 @@
+'use strict';
+
 const {Json} = require ('../..');
 const Future = require ('fluture');
 

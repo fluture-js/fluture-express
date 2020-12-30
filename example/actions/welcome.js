@@ -1,3 +1,5 @@
+'use strict';
+
 const {Render} = require ('../..');
 const Future = require ('fluture');
 
