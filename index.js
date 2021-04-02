@@ -237,4 +237,3 @@ export const dispatcher = directory => file => {
 //. [error handling with Express]: https://expressjs.com/en/guide/error-handling.html
 //. [daggy]: https://github.com/fantasyland/daggy
 //. [esm]: https://github.com/standard-things/esm
-//. [UMD]: https://github.com/umdjs/umd
