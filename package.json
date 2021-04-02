@@ -1,24 +1,23 @@
 {
   "name": "fluture-express",
   "version": "4.0.0",
-  "type": "module",
   "description": "Create Express middleware using Futures",
-  "module": "index.js",
-  "main": "index.cjs",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/fluture-js/fluture-express.git"
-  },
-  "engines": {
-    "nodejs": ">=8.0.0"
-  },
-  "tags": [
+  "keywords": [
     "fluture",
     "express",
     "middleware",
     "functional-programming"
   ],
+  "type": "module",
+  "main": "./dist/umd.js",
+  "module": "index.js",
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "require": "./dist/umd.js"
+    },
+    "./index.js": "./index.js"
+  },
   "scripts": {
     "build": "rollup -c rollup.config.js",
     "codecov": "codecov",
@@ -27,13 +26,22 @@
     "release": "sanctuary-release",
     "test": "npm run lint && sanctuary-test && npm run doctest"
   },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/fluture-js/fluture-express.git"
+  },
   "files": [
-    "/index.cjs",
+    "/dist",
     "/index.js",
     "/LICENSE",
     "/package.json",
     "/README.md"
   ],
+  "author": "Aldwin Vlasblom <aldwin@avaq.it> (https://github.com/Avaq)",
+  "license": "MIT",
+  "engines": {
+    "nodejs": ">=8.0.0"
+  },
   "dependencies": {
     "daggy": "^1.2.0"
   },
