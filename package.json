@@ -9,12 +9,12 @@
     "functional-programming"
   ],
   "type": "module",
-  "main": "./dist/umd.js",
+  "main": "./dist/cjs.js",
   "module": "index.js",
   "exports": {
     ".": {
       "import": "./index.js",
-      "require": "./dist/umd.js"
+      "require": "./dist/cjs.js"
     },
     "./index.js": "./index.js"
   },
