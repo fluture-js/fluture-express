@@ -23,7 +23,7 @@ These three endpoints are implemented in terms of four actions:
 
 1. `actions/session.js` - Assigns some state to `res.locals` based on a header.
    This is an example of using the `Next` response type.
-2. `actions/welcome.js` - Responds with some HTLM based on the `index.hbs` file in
+2. `actions/welcome.js` - Responds with some HTML based on the `index.hbs` file in
    the `views` folder and some template data, using the `Render` response type. You can use any express view-engine. See example of view-engine configuration in `index.js.`
 3. `actions/welcomeJson.js` - Responds with some JSON based on the state set by
    the session middleware. This is an example of using previously defined state
