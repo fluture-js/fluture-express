@@ -3,7 +3,7 @@
 const {Json} = require ('../..');
 const Future = require ('fluture');
 
-module.exports = (req, locals) => {
+module.exports = locals => _ => {
   const welcome = locals.session.id ? `user ${locals.session.id}` : 'stranger';
-  return Future.resolve (Json (200) ({welcome}));
+  return Future.resolve (Json ({welcome}));
 };

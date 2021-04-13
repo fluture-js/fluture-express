@@ -3,7 +3,7 @@
 const {Render} = require ('../..');
 const Future = require ('fluture');
 
-module.exports = (req, locals) => {
+module.exports = locals => _ => {
   const user = locals.session.id ? `user ${locals.session.id}` : 'stranger';
-  return Future.resolve (Render (200) ('index') ({user}));
+  return Future.resolve (Render ('index') ({user}));
 };
