@@ -51,9 +51,9 @@
 //. const {Json} = require ('fluture-express');
 //. const Future = require ('fluture');
 //.
-//. module.exports = (req, locals) => Future.do (function* () {
+//. module.exports = locals => req => Future.do (function* () {
 //.   const user = yield locals.database.find ('sessions', locals.session.id);
-//.   return Json (200, {welcome: user.name});
+//.   return withStatus (418) (Json ({welcome: user.name}));
 //. });
 //. ```
 //.
@@ -72,8 +72,9 @@
 //. The Express Response object with a `locals` property of type `a`.
 
 import daggy from 'daggy';
-import {fork, isFuture} from 'fluture/index.js';
+import {fork, isFuture} from 'fluture';
 import path from 'path';
+import Z from 'sanctuary-type-classes';
 
 const requireOrImport = file => (
   /* c8 ignore next */
@@ -82,8 +83,29 @@ const requireOrImport = file => (
   import (file).then (module => module.default)
 );
 
+const cata = cases => catamorphic => catamorphic.cata (cases);
+
+const deriveEq = type => {
+  const tags = type['@@tags'];
+
+  const defaultPattern = (
+    Object.fromEntries (tags.map (tag => [tag, _ => false]))
+  );
+
+  type.prototype['fantasy-land/equals'] = function FL$equals(other) {
+    const pattern = Object.fromEntries (tags.map (tag => [
+      tag,
+      (...args1) => other.cata ({
+        ...defaultPattern,
+        [tag]: (...args2) => Z.equals (args1, args2),
+      }),
+    ]));
+    return this.cata (pattern);
+  };
+};
+
 const runAction = (name, action, req, res, next) => {
-  const ret = action (req, res.locals);
+  const ret = action (res.locals) (req);
 
   if (!isFuture (ret)) {
     throw new TypeError (
@@ -99,25 +121,23 @@ const runAction = (name, action, req, res, next) => {
     }
 
     val.cata ({
-      Stream: (code, mime, stream) => {
-        res.type (mime);
-        res.status (code);
-        stream.pipe (res);
-      },
-      Json: (code, json) => {
-        res.status (code);
-        res.json (json);
-      },
-      Render: (code, view, data) => {
-        res.status (code);
-        res.render (view, data);
-      },
-      Redirect: (code, url) => {
-        res.redirect (code, url);
-      },
-      Empty: () => {
-        res.status (204);
-        res.end ();
+      Respond: (head, body) => {
+        head.forEach (it => it.cata ({
+          Status: code => res.status (code),
+          Type: type => res.type (type),
+          Location: url => res.location (url),
+          Links: links => res.links (links),
+          Cookie: (key, value, options) => res.cookie (key, value, options),
+          ClearCookie: (key, options) => res.clearCookie (key, options),
+          HeaderPart: (key, value) => res.append (key, value),
+          Header: (key, value) => res.set (key, value),
+        }));
+        body.cata ({
+          None: _ => res.end (),
+          Send: data => res.send (data),
+          Stream: fork (next) (it => it.pipe (res)),
+          Render: (template, data) => res.render (template, data),
+        });
       },
       Next: locals => {
         res.locals = locals;
@@ -135,68 +155,261 @@ const runAction = (name, action, req, res, next) => {
 //.
 //# Response :: Type
 //.
-//. The [daggy][] type representative of the Response type. You'll want to
-//. use one of its constructors listed below most of the time.
+//. The Response sum type encoded with [daggy][]. You probably don't need to
+//. use this directly.
+//.
+//. ```hs
+//. data Response a b = Respond (Array Head) (Body a)
+//.                   | Next b
+//. ```
 export const Response = daggy.taggedSum ('Response', {
-  Stream: ['code', 'mime', 'stream'],
-  Json: ['code', 'value'],
-  Render: ['code', 'view', 'data'],
-  Redirect: ['code', 'url'],
-  Empty: [],
+  Respond: ['head', 'body'],
   Next: ['locals'],
 });
 
-//# Stream :: Number -> String -> NodeReadableStream -> Response a
+deriveEq (Response);
+
+//# Head :: Type
 //.
-//. Indicates a streamed response. The first argument will be the response
-//. status code, the second will be used as a mime type, and the third will be
-//. piped into the response to form the response data.
-export const Stream = code => mime => stream => (
-  Response.Stream (code, mime, stream)
+//. The Head sum type encoded with [daggy][]. You probably don't need to
+//. use this directly.
+//.
+//. ```hs
+//. data Head = Status Number
+//.           | Type String
+//.           | Location String
+//.           | Links (StrMap String)
+//.           | Cookie String String Object
+//.           | ClearCookie String Object
+//.           | HeaderPart String String
+//.           | Header String String
+//. ```
+export const Head = daggy.taggedSum ('Head', {
+  Status: ['code'],
+  Type: ['type'],
+  Location: ['url'],
+  Links: ['links'],
+  Cookie: ['key', 'value', 'options'],
+  ClearCookie: ['key', 'options'],
+  HeaderPart: ['key', 'value'],
+  Header: ['key', 'value'],
+});
+
+deriveEq (Head);
+
+//# Body :: Type
+//.
+//. The Body sum type encoded with [daggy][]. You probably don't need to
+//. use this directly.
+//.
+//. ```hs
+//. data Body a = None
+//.             | Send Any
+//.             | Stream (Future a Readable)
+//.             | Render String Object
+//. ```
+export const Body = daggy.taggedSum ('Body', {
+  None: [],
+  Send: ['data'],
+  Stream: ['stream'],
+  Render: ['template', 'data'],
+});
+
+deriveEq (Body);
+
+//# Stream -> Future a Readable -> Response a b
+//.
+//. Creates a streamed response given a mime type and a Future that produces
+//. a Readable Stream when consumed. The Future is expected to produce a new
+//. Stream every time it's consumed, or if it can't, reject with a value that
+//. your Express error handler can handle.
+//.
+//. Uses a Content-Type of `application/octet-stream` unless overridden by
+//. [`withType`](#withType), [`withHeader`](#withHeader),
+//. or [`withoutHeader`](#withoutHeader).
+export const Stream = stream => Response.Respond (
+  [Head.Type ('application/octet-stream')],
+  Body.Stream (stream)
 );
 
-//# Json :: Number -> Object -> Response a
+//# Text :: String -> Response a b
 //.
-//. Indicates a JSON response. The first argument will be the response status
-//. code, and the second will be converted to JSON and sent as-is.
-export const Json = code => value => (
-  Response.Json (code, value)
+//. Indicates a textual response.
+//.
+//. Uses a Content-Type of `text/plain` unless overridden by
+//. [`withType`](#withType), [`withHeader`](#withHeader),
+//. or [`withoutHeader`](#withoutHeader).
+export const Text = value => Response.Respond (
+  [Head.Type ('text/plain')],
+  Body.Send (value),
 );
 
-//# Render :: Number -> String -> Object -> Response a
+//# Json :: Object -> Response a b
+//.
+//. Indicates a JSON response.
+//.
+//. Uses a Content-Type of `application/json` unless overridden by
+//. [`withType`](#withType), [`withHeader`](#withHeader),
+//. or [`withoutHeader`](#withoutHeader).
+export const Json = value => Response.Respond (
+  [Head.Type ('application/json')],
+  Body.Send (JSON.stringify (value)),
+);
+
+//# Render :: String -⁠> Object -⁠> Response a b
 //.
 //. Indicates a response to be rendered using a template. The first argument
-//. will be the response status code, the second is the path to the template
-//. file, and the third is the data to inject into the template. This uses
-//. Express' render method under the hood, so you can configure it globally
-//. with `app.set ('view engine', engine)` and `app.set ('views', path)`.
-export const Render = code => view => data => (
-  Response.Render (code, view, data)
+//. is the path to the template file, and the second is the data to inject into
+//. the template. This uses Express' render method under the hood, so you can
+//. configure it globally with `app.set ('view engine', engine)` and
+//. `app.set ('views', path)`.
+export const Render = view => data => Response.Respond (
+  [],
+  Body.Render (view, data)
 );
 
-//# Redirect :: Number -> String -> Response a
+//# Redirect :: String -> Response a b
 //.
 //. Indicates a redirection. The first argument will be the response status
 //. code, and the second will be the value of the Location header.
-export const Redirect = code => location => (
-  Response.Redirect (code, location)
+//.
+//. Unless overridden by [`withStatus`](#withStatus), the status code will be
+//. set to 301 (Moved Permanently).
+export const Redirect = location => Response.Respond (
+  [Head.Status (301), Head.Location (location)],
+  Body.None
 );
 
-//# Empty :: Response a
+//# Empty :: Response a b
 //.
 //. Indicates an empty response. The response status will be set to 204, and
 //. no response body or Content-Type header will be sent.
-export const Empty = Response.Empty;
+export const Empty = Response.Respond (
+  [Head.Status (204)],
+  Body.None,
+);
 
-//# Next :: a -> Response a
+//# Next :: b -> Response a b
 //.
 //. Indicates that this middleware does not form a response. The supplied value
 //. will be assigned to `res.locals` and the next middleware will be called.
 export const Next = Response.Next;
 
+//# withStatus :: Number -> Response a b -> Response a b
+//.
+//. Configure the status code by setting up a call to [`res.status`][].
+export const withStatus = code => cata ({
+  Respond: (head, body) => Response.Respond (
+    [...head, Head.Status (code)],
+    body,
+  ),
+  Next: Response.Next,
+});
+
+//# withType :: String -> Response a b -> Response a b
+//.
+//. Configure the Content-Type by setting up a call to [`res.type`][].
+export const withType = type => cata ({
+  Respond: (head, body) => Response.Respond (
+    [...head, Head.Type (type)],
+    body,
+  ),
+  Next: Response.Next,
+});
+
+//# withLocation :: String -> Response a b -> Response a b
+//.
+//. Configure the Location header by setting up a call to [`res.location`][].
+export const withLocation = url => cata ({
+  Respond: (head, body) => Response.Respond (
+    [...head, Head.Location (url)],
+    body,
+  ),
+  Next: Response.Next,
+});
+
+//# withLinks :: StrMap String -> Response a b -> Response a b
+//.
+//. Configure the Link header by setting up a call to [`res.links`][].
+export const withLinks = links => cata ({
+  Respond: (head, body) => Response.Respond (
+    [...head, Head.Links (links)],
+    body,
+  ),
+  Next: Response.Next,
+});
+
+//# withCookie :: CookieOptions -> String -> String -> Response a b -> Response a b
+//.
+//. Configure the Set-Cookie header by setting up a call to [`res.cookie`][].
+export const withCookie = options => key => value => cata ({
+  Respond: (head, body) => Response.Respond (
+    [...head, Head.Cookie (key, value, options)],
+    body,
+  ),
+  Next: Response.Next,
+});
+
+//# withClearCookie :: CookieOptions -> String -> Response a b -> Response a b
+//.
+//. Configure the Set-Cookie header by setting up a call to
+//. [`res.clearCookie`][].
+export const withClearCookie = options => key => cata ({
+  Respond: (head, body) => Response.Respond (
+    [...head, Head.ClearCookie (key, options)],
+    body,
+  ),
+  Next: Response.Next,
+});
+
+//# withClearCookie :: String -> String -> Response a b -> Response a b
+//.
+//. Append to a header by setting up a call to [`res.append`][].
+export const withHeaderPart = key => value => cata ({
+  Respond: (head, body) => Response.Respond (
+    [...head, Head.HeaderPart (key, value)],
+    body,
+  ),
+  Next: Response.Next,
+});
+
+//# withHeader :: String -> String -> Response a b -> Response a b
+//.
+//. Configure a header by setting up a call to [`res.set`][].
+export const withHeader = key => value => cata ({
+  Respond: (head, body) => Response.Respond (
+    [...head, Head.Header (key, value)],
+    body,
+  ),
+  Next: Response.Next,
+});
+
+//# withoutHeader :: String -> Response a b -> Response a b
+//.
+//. Removes a header from the Response. Also removes headers that would be
+//. set by functions like [`withType`](#withType). For example:
+//.
+//. ```js
+//. > withoutHeader ('Content-Type') (withType ('json') (Empty))
+//. Empty
+//. ```
+export const withoutHeader = header => cata ({
+  Respond: (head, body) => Response.Respond (head.filter (cata ({
+    Status: _ => true,
+    Type: _ => header.toLowerCase () !== 'content-type',
+    Location: _ => header.toLowerCase () !== 'location',
+    Links: _ => header.toLowerCase () !== 'link',
+    Cookie: _ => header.toLowerCase () !== 'set-cookie',
+    ClearCookie: _ => header.toLowerCase () !== 'set-cookie',
+    HeaderPart: key => key.toLowerCase () !== header.toLowerCase (),
+    Header: key => key.toLowerCase () !== header.toLowerCase (),
+  })), body),
+  Next: Response.Next,
+});
+
 //. ### Middleware creation utilities
 //.
-//# middleware :: ((Req, a) -> Future b (Response a)) -> (Req, Res a, (b -> Undefined)) -> Undefined
+//# middleware :: (b -> Req -> Future a (Response a b)) -> (Req, Res b, (a -> Undefined)) -> Undefined
 //.
 //. Converts an action to an Express middleware.
 //.
@@ -237,3 +450,12 @@ export const dispatcher = directory => file => {
 //. [error handling with Express]: https://expressjs.com/en/guide/error-handling.html
 //. [daggy]: https://github.com/fantasyland/daggy
 //. [esm]: https://github.com/standard-things/esm
+
+//. [`res.status`]: https://expressjs.com/en/4x/api.html#res.status
+//. [`res.type`]: https://expressjs.com/en/4x/api.html#res.type
+//. [`res.location`]: https://expressjs.com/en/4x/api.html#res.location
+//. [`res.links`]: https://expressjs.com/en/4x/api.html#res.links
+//. [`res.cookie`]: https://expressjs.com/en/4x/api.html#res.cookie
+//. [`res.clearCookie`]: https://expressjs.com/en/4x/api.html#res.clearCookie
+//. [`res.append`]: https://expressjs.com/en/4x/api.html#res.append
+//. [`res.set`]: https://expressjs.com/en/4x/api.html#res.set

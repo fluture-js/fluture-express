@@ -3,7 +3,7 @@ import pkg from './package.json';
 const dependencyNames = Array.prototype.concat.call (
   Object.keys (pkg.dependencies),
   Object.keys (pkg.peerDependencies),
-  ['fluture/index.js', 'path']
+  ['path']
 );
 
 export default {
@@ -15,8 +15,5 @@ export default {
     exports: 'named',
     interop: false,
     globals: {},
-    paths: {
-      'fluture/index.js': 'fluture',
-    },
   },
 };
