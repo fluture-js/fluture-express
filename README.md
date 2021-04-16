@@ -28,9 +28,9 @@ be used.
 
 You can load the EcmaScript module from various content delivery networks:
 
-- [Skypack](https://cdn.skypack.dev/fluture-express@4.1.2)
-- [JSPM](https://jspm.dev/fluture-express@4.1.2)
-- [jsDelivr](https://cdn.jsdelivr.net/npm/fluture-express@4.1.2/+esm)
+- [Skypack](https://cdn.skypack.dev/fluture-express@5.0.0)
+- [JSPM](https://jspm.dev/fluture-express@5.0.0)
+- [jsDelivr](https://cdn.jsdelivr.net/npm/fluture-express@5.0.0/+esm)
 
 ### Usage Example
 
@@ -51,9 +51,9 @@ app.listen (3000);
 const {Json} = require ('fluture-express');
 const Future = require ('fluture');
 
-module.exports = (req, locals) => Future.do (function* () {
+module.exports = locals => req => Future.do (function* () {
   const user = yield locals.database.find ('sessions', locals.session.id);
-  return Json (200, {welcome: user.name});
+  return withStatus (418) (Json ({welcome: user.name}));
 });
 ```
 
@@ -77,48 +77,143 @@ Fluture-Express mutates the response object for you, based on a
 specification of what the response should be. This specification is
 captured by the Response sum-type.
 
-#### <a name="Response" href="https://github.com/fluture-js/fluture-express/blob/v4.1.2/index.js#L136">`Response :: Type`</a>
+#### <a name="Response" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L156">`Response :: Type`</a>
 
-The [daggy][] type representative of the Response type. You'll want to
-use one of its constructors listed below most of the time.
+The Response sum type encoded with [daggy][]. You probably don't need to
+use this directly.
 
-#### <a name="Stream" href="https://github.com/fluture-js/fluture-express/blob/v4.1.2/index.js#L149">`Stream :: Number -⁠> String -⁠> NodeReadableStream -⁠> Response a`</a>
+```hs
+data Response a b = Respond (Array Head) (Body a)
+                  | Next b
+```
 
-Indicates a streamed response. The first argument will be the response
-status code, the second will be used as a mime type, and the third will be
-piped into the response to form the response data.
+#### <a name="Head" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L172">`Head :: Type`</a>
 
-#### <a name="Json" href="https://github.com/fluture-js/fluture-express/blob/v4.1.2/index.js#L158">`Json :: Number -⁠> Object -⁠> Response a`</a>
+The Head sum type encoded with [daggy][]. You probably don't need to
+use this directly.
 
-Indicates a JSON response. The first argument will be the response status
-code, and the second will be converted to JSON and sent as-is.
+```hs
+data Head = Status Number
+          | Type String
+          | Location String
+          | Links (StrMap String)
+          | Cookie String String Object
+          | ClearCookie String Object
+          | HeaderPart String String
+          | Header String String
+```
 
-#### <a name="Render" href="https://github.com/fluture-js/fluture-express/blob/v4.1.2/index.js#L166">`Render :: Number -⁠> String -⁠> Object -⁠> Response a`</a>
+#### <a name="Body" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L200">`Body :: Type`</a>
+
+The Body sum type encoded with [daggy][]. You probably don't need to
+use this directly.
+
+```hs
+data Body a = None
+            | Send Any
+            | Stream (Future a Readable)
+            | Render String Object
+```
+
+#### <a name="Stream -> Future a Readable -> Response a b" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L220">`Stream -⁠> Future a Readable -⁠> Response a b`</a>
+
+Creates a streamed response given a mime type and a Future that produces
+a Readable Stream when consumed. The Future is expected to produce a new
+Stream every time it's consumed, or if it can't, reject with a value that
+your Express error handler can handle.
+
+Uses a Content-Type of `application/octet-stream` unless overridden by
+[`withType`](#withType), [`withHeader`](#withHeader),
+or [`withoutHeader`](#withoutHeader).
+
+#### <a name="Text" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L235">`Text :: String -⁠> Response a b`</a>
+
+Indicates a textual response.
+
+Uses a Content-Type of `text/plain` unless overridden by
+[`withType`](#withType), [`withHeader`](#withHeader),
+or [`withoutHeader`](#withoutHeader).
+
+#### <a name="Json" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L247">`Json :: Object -⁠> Response a b`</a>
+
+Indicates a JSON response.
+
+Uses a Content-Type of `application/json` unless overridden by
+[`withType`](#withType), [`withHeader`](#withHeader),
+or [`withoutHeader`](#withoutHeader).
+
+#### <a name="Render" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L259">`Render :: String -⁠> Object -⁠> Response a b`</a>
 
 Indicates a response to be rendered using a template. The first argument
-will be the response status code, the second is the path to the template
-file, and the third is the data to inject into the template. This uses
-Express' render method under the hood, so you can configure it globally
-with `app.set ('view engine', engine)` and `app.set ('views', path)`.
+is the path to the template file, and the second is the data to inject into
+the template. This uses Express' render method under the hood, so you can
+configure it globally with `app.set ('view engine', engine)` and
+`app.set ('views', path)`.
 
-#### <a name="Redirect" href="https://github.com/fluture-js/fluture-express/blob/v4.1.2/index.js#L177">`Redirect :: Number -⁠> String -⁠> Response a`</a>
+#### <a name="Redirect" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L271">`Redirect :: String -⁠> Response a b`</a>
 
 Indicates a redirection. The first argument will be the response status
 code, and the second will be the value of the Location header.
 
-#### <a name="Empty" href="https://github.com/fluture-js/fluture-express/blob/v4.1.2/index.js#L185">`Empty :: Response a`</a>
+Unless overridden by [`withStatus`](#withStatus), the status code will be
+set to 301 (Moved Permanently).
+
+#### <a name="Empty" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L283">`Empty :: Response a b`</a>
 
 Indicates an empty response. The response status will be set to 204, and
 no response body or Content-Type header will be sent.
 
-#### <a name="Next" href="https://github.com/fluture-js/fluture-express/blob/v4.1.2/index.js#L191">`Next :: a -⁠> Response a`</a>
+#### <a name="Next" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L292">`Next :: b -⁠> Response a b`</a>
 
 Indicates that this middleware does not form a response. The supplied value
 will be assigned to `res.locals` and the next middleware will be called.
 
+#### <a name="withStatus" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L298">`withStatus :: Number -⁠> Response a b -⁠> Response a b`</a>
+
+Configure the status code by setting up a call to [`res.status`][].
+
+#### <a name="withType" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L309">`withType :: String -⁠> Response a b -⁠> Response a b`</a>
+
+Configure the Content-Type by setting up a call to [`res.type`][].
+
+#### <a name="withLocation" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L320">`withLocation :: String -⁠> Response a b -⁠> Response a b`</a>
+
+Configure the Location header by setting up a call to [`res.location`][].
+
+#### <a name="withLinks" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L331">`withLinks :: StrMap String -⁠> Response a b -⁠> Response a b`</a>
+
+Configure the Link header by setting up a call to [`res.links`][].
+
+#### <a name="withCookie" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L342">`withCookie :: CookieOptions -⁠> String -⁠> String -⁠> Response a b -⁠> Response a b`</a>
+
+Configure the Set-Cookie header by setting up a call to [`res.cookie`][].
+
+#### <a name="withClearCookie" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L353">`withClearCookie :: CookieOptions -⁠> String -⁠> Response a b -⁠> Response a b`</a>
+
+Configure the Set-Cookie header by setting up a call to
+[`res.clearCookie`][].
+
+#### <a name="withClearCookie" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L365">`withClearCookie :: String -⁠> String -⁠> Response a b -⁠> Response a b`</a>
+
+Append to a header by setting up a call to [`res.append`][].
+
+#### <a name="withHeader" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L376">`withHeader :: String -⁠> String -⁠> Response a b -⁠> Response a b`</a>
+
+Configure a header by setting up a call to [`res.set`][].
+
+#### <a name="withoutHeader" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L387">`withoutHeader :: String -⁠> Response a b -⁠> Response a b`</a>
+
+Removes a header from the Response. Also removes headers that would be
+set by functions like [`withType`](#withType). For example:
+
+```js
+> withoutHeader ('Content-Type') (withType ('json') (Empty))
+Empty
+```
+
 ### Middleware creation utilities
 
-#### <a name="middleware" href="https://github.com/fluture-js/fluture-express/blob/v4.1.2/index.js#L199">`middleware :: ((Req, a) -⁠> Future b (Response a)) -⁠> (Req, Res a, (b -⁠> Undefined)) -⁠> Undefined`</a>
+#### <a name="middleware" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L412">`middleware :: (b -⁠> Req -⁠> Future a (Response a b)) -⁠> (Req, Res b, (a -⁠> Undefined)) -⁠> Undefined`</a>
 
 Converts an action to an Express middleware.
 
@@ -129,7 +224,7 @@ appropriate mutations to the [`res`][].
 If the Future rejects, the rejection reason is passed into `next` for
 further [error handling with Express][].
 
-#### <a name="dispatcher" href="https://github.com/fluture-js/fluture-express/blob/v4.1.2/index.js#L213">`dispatcher :: String -⁠> String -⁠> (Req, Res a, (Any -⁠> Undefined)) -⁠> Promise Undefined`</a>
+#### <a name="dispatcher" href="https://github.com/fluture-js/fluture-express/blob/v5.0.0/index.js#L426">`dispatcher :: String -⁠> String -⁠> (Req, Res a, (Any -⁠> Undefined)) -⁠> Promise Undefined`</a>
 
 Creates middleware that uses the export from the given file in the given
 directory as an "action".
@@ -148,3 +243,12 @@ The exported value should be a function of the same signature as given to
 [error handling with Express]: https://expressjs.com/en/guide/error-handling.html
 [daggy]: https://github.com/fantasyland/daggy
 [esm]: https://github.com/standard-things/esm
+
+[`res.status`]: https://expressjs.com/en/4x/api.html#res.status
+[`res.type`]: https://expressjs.com/en/4x/api.html#res.type
+[`res.location`]: https://expressjs.com/en/4x/api.html#res.location
+[`res.links`]: https://expressjs.com/en/4x/api.html#res.links
+[`res.cookie`]: https://expressjs.com/en/4x/api.html#res.cookie
+[`res.clearCookie`]: https://expressjs.com/en/4x/api.html#res.clearCookie
+[`res.append`]: https://expressjs.com/en/4x/api.html#res.append
+[`res.set`]: https://expressjs.com/en/4x/api.html#res.set
