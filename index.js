@@ -85,20 +85,27 @@ const requireOrImport = file => (
 
 const cata = cases => catamorphic => catamorphic.cata (cases);
 
-const deriveEq = type => {
-  const tags = type['@@tags'];
+const cataWithDefault = def => pattern => catamorphic => {
+  const tags = catamorphic.constructor['@@tags'];
 
   const defaultPattern = (
-    Object.fromEntries (tags.map (tag => [tag, _ => false]))
+    Object.fromEntries (tags.map (tag => [tag, _ => def]))
   );
 
+  return catamorphic.cata ({
+    ...defaultPattern,
+    ...pattern,
+  });
+};
+
+const deriveEq = type => {
+  const tags = type['@@tags'];
   type.prototype['fantasy-land/equals'] = function FL$equals(other) {
     const pattern = Object.fromEntries (tags.map (tag => [
       tag,
-      (...args1) => other.cata ({
-        ...defaultPattern,
+      (...args1) => cataWithDefault (false) ({
         [tag]: (...args2) => Z.equals (args1, args2),
-      }),
+      }) (other),
     ]));
     return this.cata (pattern);
   };
