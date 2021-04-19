@@ -135,6 +135,7 @@ const runAction = (name, action, req, res, next) => {
         body.cata ({
           None: _ => res.end (),
           Send: data => res.send (data),
+          Json: data => res.json (data),
           Stream: fork (next) (it => it.pipe (res)),
           Render: (template, data) => res.render (template, data),
         });
@@ -205,12 +206,14 @@ deriveEq (Head);
 //. ```hs
 //. data Body a = None
 //.             | Send Any
+//.             | Json JsonValue
 //.             | Stream (Future a Readable)
 //.             | Render String Object
 //. ```
 export const Body = daggy.taggedSum ('Body', {
   None: [],
   Send: ['data'],
+  Json: ['data'],
   Stream: ['stream'],
   Render: ['template', 'data'],
 });
@@ -244,16 +247,15 @@ export const Text = value => Response.Respond (
   Body.Send (value),
 );
 
-//# Json :: Object -> Response a b
+//# Json :: JsonValue -> Response a b
 //.
 //. Indicates a JSON response.
 //.
 //. Uses a Content-Type of `application/json` unless overridden by
-//. [`withType`](#withType), [`withHeader`](#withHeader),
-//. or [`withoutHeader`](#withoutHeader).
+//. [`withType`](#withType), [`withHeader`](#withHeader).
 export const Json = value => Response.Respond (
-  [Head.Type ('application/json')],
-  Body.Send (JSON.stringify (value)),
+  [],
+  Body.Json (value),
 );
 
 //# Render :: String -⁠> Object -⁠> Response a b
