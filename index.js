@@ -98,16 +98,16 @@ const cataWithDefault = def => pattern => catamorphic => {
   });
 };
 
+const cataBool = cataWithDefault (false);
+
 const deriveEq = type => {
   const tags = type['@@tags'];
   type.prototype['fantasy-land/equals'] = function FL$equals(other) {
     const pattern = Object.fromEntries (tags.map (tag => [
       tag,
-      (...args1) => cataWithDefault (false) ({
-        [tag]: (...args2) => Z.equals (args1, args2),
-      }) (other),
+      (...xs) => cataBool ({[tag]: (...ys) => Z.equals (xs, ys)}),
     ]));
-    return this.cata (pattern);
+    return this.cata (pattern) (other);
   };
 };
 
@@ -225,7 +225,15 @@ export const Body = daggy.taggedSum ('Body', {
   Render: ['template', 'data'],
 });
 
-deriveEq (Body);
+Body.prototype['fantasy-land/equals'] = function Body$FL$equals(other) {
+  return this.cata ({
+    None: _ => cataBool ({None: _ => true}),
+    Send: a => cataBool ({Send: b => Z.equals (a, b)}),
+    Json: a => cataBool ({Json: b => Z.equals (a, b)}),
+    Stream: a => cataBool ({Stream: b => a === b}),
+    Render: (...a) => cataBool ({Render: (...b) => Z.equals (a, b)}),
+  }) (other);
+};
 
 //# Stream -> Future a Readable -> Response a b
 //.

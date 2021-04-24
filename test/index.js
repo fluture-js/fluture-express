@@ -28,6 +28,7 @@ function throws(fn, expected) {
 
 test ('Stream', () => {
   eq (lib.Response.is (lib.Stream (emptyStream)), true);
+  eq (lib.Stream (emptyStream), lib.Stream (emptyStream));
 });
 
 test ('Text', () => {
@@ -42,8 +43,8 @@ test ('Json', () => {
 });
 
 test ('Render', () => {
-  eq (lib.Response.is (lib.Render ('') ('')), true);
-  eq (lib.Render ('') (''), lib.Render ('') (''));
+  eq (lib.Response.is (lib.Render ('asd') ({a: 1})), true);
+  eq (lib.Render ('asd') ({a: 1}), lib.Render ('asd') ({a: 1}));
 });
 
 test ('Redirect', () => {
