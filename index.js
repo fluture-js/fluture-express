@@ -85,22 +85,29 @@ const requireOrImport = file => (
 
 const cata = cases => catamorphic => catamorphic.cata (cases);
 
-const deriveEq = type => {
-  const tags = type['@@tags'];
+const cataWithDefault = def => pattern => catamorphic => {
+  const tags = catamorphic.constructor['@@tags'];
 
   const defaultPattern = (
-    Object.fromEntries (tags.map (tag => [tag, _ => false]))
+    Object.fromEntries (tags.map (tag => [tag, _ => def]))
   );
 
+  return catamorphic.cata ({
+    ...defaultPattern,
+    ...pattern,
+  });
+};
+
+const cataBool = cataWithDefault (false);
+
+const deriveEq = type => {
+  const tags = type['@@tags'];
   type.prototype['fantasy-land/equals'] = function FL$equals(other) {
     const pattern = Object.fromEntries (tags.map (tag => [
       tag,
-      (...args1) => other.cata ({
-        ...defaultPattern,
-        [tag]: (...args2) => Z.equals (args1, args2),
-      }),
+      (...xs) => cataBool ({[tag]: (...ys) => Z.equals (xs, ys)}),
     ]));
-    return this.cata (pattern);
+    return this.cata (pattern) (other);
   };
 };
 
@@ -135,6 +142,7 @@ const runAction = (name, action, req, res, next) => {
         body.cata ({
           None: _ => res.end (),
           Send: data => res.send (data),
+          Json: data => res.json (data),
           Stream: fork (next) (it => it.pipe (res)),
           Render: (template, data) => res.render (template, data),
         });
@@ -205,17 +213,27 @@ deriveEq (Head);
 //. ```hs
 //. data Body a = None
 //.             | Send Any
+//.             | Json JsonValue
 //.             | Stream (Future a Readable)
 //.             | Render String Object
 //. ```
 export const Body = daggy.taggedSum ('Body', {
   None: [],
   Send: ['data'],
+  Json: ['data'],
   Stream: ['stream'],
   Render: ['template', 'data'],
 });
 
-deriveEq (Body);
+Body.prototype['fantasy-land/equals'] = function Body$FL$equals(other) {
+  return this.cata ({
+    None: _ => cataBool ({None: _ => true}),
+    Send: a => cataBool ({Send: b => Z.equals (a, b)}),
+    Json: a => cataBool ({Json: b => Z.equals (a, b)}),
+    Stream: a => cataBool ({Stream: b => a === b}),
+    Render: (...a) => cataBool ({Render: (...b) => Z.equals (a, b)}),
+  }) (other);
+};
 
 //# Stream -> Future a Readable -> Response a b
 //.
@@ -244,16 +262,15 @@ export const Text = value => Response.Respond (
   Body.Send (value),
 );
 
-//# Json :: Object -> Response a b
+//# Json :: JsonValue -> Response a b
 //.
 //. Indicates a JSON response.
 //.
 //. Uses a Content-Type of `application/json` unless overridden by
-//. [`withType`](#withType), [`withHeader`](#withHeader),
-//. or [`withoutHeader`](#withoutHeader).
+//. [`withType`](#withType), [`withHeader`](#withHeader).
 export const Json = value => Response.Respond (
-  [Head.Type ('application/json')],
-  Body.Send (JSON.stringify (value)),
+  [],
+  Body.Json (value),
 );
 
 //# Render :: String -⁠> Object -⁠> Response a b

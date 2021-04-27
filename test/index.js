@@ -13,6 +13,7 @@ function eq(actual, expected) {
   assert.strictEqual (arguments.length, eq.length);
   assert.strictEqual (show (actual), show (expected));
   assert.strictEqual (Z.equals (actual, expected), true);
+  assert.strictEqual (Z.equals (expected, actual), true);
 }
 
 function methodSpy() {
@@ -27,30 +28,38 @@ function throws(fn, expected) {
 
 test ('Stream', () => {
   eq (lib.Response.is (lib.Stream (emptyStream)), true);
+  eq (lib.Stream (emptyStream), lib.Stream (emptyStream));
 });
 
 test ('Text', () => {
   eq (lib.Response.is (lib.Text ('')), true);
+  eq (lib.Text (''), lib.Text (''));
 });
 
 test ('Json', () => {
   eq (lib.Response.is (lib.Json (null)), true);
+  eq (lib.Json (null), lib.Json (null));
+  eq (lib.Json ({a: 1, b: 2}), lib.Json ({b: 2, a: 1}));
 });
 
 test ('Render', () => {
-  eq (lib.Response.is (lib.Render ('') ('')), true);
+  eq (lib.Response.is (lib.Render ('asd') ({a: 1})), true);
+  eq (lib.Render ('asd') ({a: 1}), lib.Render ('asd') ({a: 1}));
 });
 
 test ('Redirect', () => {
   eq (lib.Response.is (lib.Redirect ('')), true);
+  eq (lib.Redirect (''), lib.Redirect (''));
 });
 
 test ('Empty', () => {
   eq (lib.Response.is (lib.Empty), true);
+  eq (lib.Empty, lib.Empty);
 });
 
 test ('Next', () => {
   eq (lib.Response.is (lib.Next (null)), true);
+  eq (lib.Next (null), lib.Next (null));
 });
 
 test ('withStatus', () => {
@@ -166,15 +175,26 @@ test ('Redirect middleware', () => {
   eq (mockNext.args, []);
 });
 
-test ('Json middleware', () => {
-  const mock = lib.middleware (_ => _ => resolve (lib.Json ({foo: 'bar'})));
+test ('Text middleware', () => {
+  const mock = lib.middleware (_ => _ => resolve (lib.Text ('hello')));
   const mockRes = {type: methodSpy (), send: methodSpy ()};
   const mockNext = sinon.spy ();
 
   mock ({}, mockRes, mockNext);
 
-  eq (mockRes.type.args, [['application/json']]);
-  eq (mockRes.send.args, [['{"foo":"bar"}']]);
+  eq (mockRes.type.args, [['text/plain']]);
+  eq (mockRes.send.args, [['hello']]);
+  eq (mockNext.args, []);
+});
+
+test ('Json middleware', () => {
+  const mock = lib.middleware (_ => _ => resolve (lib.Json ({foo: 'bar'})));
+  const mockRes = {json: methodSpy ()};
+  const mockNext = sinon.spy ();
+
+  mock ({}, mockRes, mockNext);
+
+  eq (mockRes.json.args, [[{foo: 'bar'}]]);
   eq (mockNext.args, []);
 });
 
@@ -267,12 +287,11 @@ test ('withHeader middleware', () => {
 
 test ('dispatcher', async () => {
   const mock = lib.dispatcher ('test') ('mock-action.js');
-  const mockRes = {type: methodSpy (), send: methodSpy ()};
+  const mockRes = {json: methodSpy ()};
   const mockNext = sinon.spy ();
 
   await mock ({}, mockRes, mockNext);
 
-  eq (mockRes.type.args, [['application/json']]);
-  eq (mockRes.send.args, [['{"foo":"bar"}']]);
+  eq (mockRes.json.args, [[{foo: 'bar'}]]);
   eq (mockNext.args, []);
 });
