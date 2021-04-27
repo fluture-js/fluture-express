@@ -28,9 +28,9 @@
 //.
 //. You can load the EcmaScript module from various content delivery networks:
 //.
-//. - [Skypack](https://cdn.skypack.dev/fluture-express@5.0.0)
-//. - [JSPM](https://jspm.dev/fluture-express@5.0.0)
-//. - [jsDelivr](https://cdn.jsdelivr.net/npm/fluture-express@5.0.0/+esm)
+//. - [Skypack](https://cdn.skypack.dev/fluture-express@6.0.0)
+//. - [JSPM](https://jspm.dev/fluture-express@6.0.0)
+//. - [jsDelivr](https://cdn.jsdelivr.net/npm/fluture-express@6.0.0/+esm)
 //.
 //. ### Usage Example
 //.
