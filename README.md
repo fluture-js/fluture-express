@@ -51,7 +51,7 @@ app.listen (3000);
 const {Json} = require ('fluture-express');
 const Future = require ('fluture');
 
-module.exports = locals => req => Future.do (function* () {
+module.exports = locals => req => Future.go (function* () {
   const user = yield locals.database.find ('sessions', locals.session.id);
   return withStatus (418) (Json ({welcome: user.name}));
 });
