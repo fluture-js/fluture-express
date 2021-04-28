@@ -426,7 +426,7 @@ export const withoutHeader = header => cata ({
 
 //. ### Middleware creation utilities
 //.
-//# middleware :: (b -> Req -> Future a (Response a b)) -> (Req, Res b, (a -> Undefined)) -> Undefined
+//# middleware :: (b -> Req -> Future a (Response a c)) -> (Req, Res b, (a -> Undefined)) -> Undefined
 //.
 //. Converts an action to an Express middleware.
 //.
