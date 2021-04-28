@@ -379,7 +379,7 @@ export const withClearCookie = options => key => cata ({
   Next: Response.Next,
 });
 
-//# withClearCookie :: String -> String -> Response a b -> Response a b
+//# withHeaderPart :: String -> String -> Response a b -> Response a b
 //.
 //. Append to a header by setting up a call to [`res.append`][].
 export const withHeaderPart = key => value => cata ({
