@@ -51,7 +51,7 @@
 //. const {Json} = require ('fluture-express');
 //. const Future = require ('fluture');
 //.
-//. module.exports = locals => req => Future.do (function* () {
+//. module.exports = locals => req => Future.go (function* () {
 //.   const user = yield locals.database.find ('sessions', locals.session.id);
 //.   return withStatus (418) (Json ({welcome: user.name}));
 //. });
@@ -379,7 +379,7 @@ export const withClearCookie = options => key => cata ({
   Next: Response.Next,
 });
 
-//# withClearCookie :: String -> String -> Response a b -> Response a b
+//# withHeaderPart :: String -> String -> Response a b -> Response a b
 //.
 //. Append to a header by setting up a call to [`res.append`][].
 export const withHeaderPart = key => value => cata ({
@@ -426,7 +426,7 @@ export const withoutHeader = header => cata ({
 
 //. ### Middleware creation utilities
 //.
-//# middleware :: (b -> Req -> Future a (Response a b)) -> (Req, Res b, (a -> Undefined)) -> Undefined
+//# middleware :: (b -> Req -> Future a (Response a c)) -> (Req, Res b, (a -> Undefined)) -> Undefined
 //.
 //. Converts an action to an Express middleware.
 //.
